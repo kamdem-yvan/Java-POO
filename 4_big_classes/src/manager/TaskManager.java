@@ -3,6 +3,7 @@ package manager;
 import model.Task;
 import model.TaskHistoryEntry;
 
+import user.Engineer;
 import user.User;
 
 import enums.PriorityLevel;
@@ -111,5 +112,99 @@ public class TaskManager {
     public Task getNextReadyTask() {
 
         return readyQueue.peek();
+    }
+
+    public void assignTask(String taskId,
+                           String engineerId,
+                           User user) {
+
+        if (!user.canAssignTask()) {
+
+            System.out.println("Permission denied.");
+
+            return;
+        }
+
+        Task task = tasks.get(taskId);
+
+        User assignedUser = users.get(engineerId);
+
+        if (task == null || assignedUser == null) {
+
+            System.out.println("Task or engineer not found.");
+
+            return;
+        }
+
+        if (!(assignedUser instanceof Engineer)) {
+
+            System.out.println("Assigned user is not an engineer.");
+
+            return;
+        }
+
+        task.setAssignedEngineer((Engineer) assignedUser);
+
+        System.out.println("Task assigned successfully.");
+    }
+
+    public void startTask(String taskId, User user) {
+
+        Task task = tasks.get(taskId);
+
+        if (task == null) {
+
+            System.out.println("Task not found.");
+
+            return;
+        }
+
+        if (task.getAssignedEngineer() == null) {
+
+            System.out.println("No engineer assigned.");
+
+            return;
+        }
+
+        if (!task.isDependenciesCompleted()) {
+
+            task.setStatus(TaskStatus.BLOCKED);
+
+            System.out.println("Dependencies are not completed.");
+
+            return;
+        }
+
+        task.updateStatus(TaskStatus.IN_PROGRESS, user);
+
+        inProgressTasks.add(task);
+
+        readyQueue.remove(task);
+
+        System.out.println("Task started.");
+    }
+    public void completeTask(String taskId, User user) {
+
+        Task task = tasks.get(taskId);
+
+        if (task == null) {
+
+            System.out.println("Task not found.");
+
+            return;
+        }
+
+        if (task.getStatus() != TaskStatus.IN_PROGRESS) {
+
+            System.out.println("Task is not in progress.");
+
+            return;
+        }
+
+        task.markAsDone(user);
+
+        inProgressTasks.remove(task);
+
+        System.out.println("Task completed.");
     }
 }
